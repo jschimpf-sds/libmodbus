@@ -28,9 +28,12 @@ unit-test-client
 By default, this program sends some queries with the values defined in
 unit-test.h and checks the responses. These programs are useful to
 test the protocol implementation.
+
 With no cmd line variables it runs the tcp version
+
 With rtu on the command line it runs the RTU version
 		(see code for selected serial port)
+		
 With rtuASCII on the command line it runs the ASCII rtu version
 		(see code for selected serial port)
 		
