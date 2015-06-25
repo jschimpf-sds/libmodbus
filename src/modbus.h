@@ -246,9 +246,12 @@ MODBUS_API float modbus_get_float(const uint16_t *src);
 MODBUS_API float modbus_get_float_dcba(const uint16_t *src);
 MODBUS_API void modbus_set_float(float f, uint16_t *dest);
 MODBUS_API void modbus_set_float_dcba(float f, uint16_t *dest);
+void modbus_hex_from_byte( unsigned char byte, uint8_t *result);
+int modbus_byte_from_hex(int psn,unsigned char *buffer);
 
 #include "modbus-tcp.h"
 #include "modbus-rtu.h"
+#include "modbus-rtu-ascii.h"
 
 MODBUS_END_DECLS
 

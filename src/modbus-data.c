@@ -140,3 +140,94 @@ void modbus_set_float_dcba(float f, uint16_t *dest)
     dest[0] = (uint16_t)i;
     dest[1] = (uint16_t)(i >> 16);
 }
+
+//------------------------------------------
+// MODBUS ASCII
+
+/* Convert binary nibble -> ASCII
+
+	INPUT	byte	- Binary 0,15
+	
+	OUTPUT:	nibble	- ASCII (0-F) of binary
+	
+*/
+
+static uint8_t nib_to_ASCII(char byte)
+{
+	uint8_t rtnval = 0;
+
+	switch( byte )
+	{
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+		case 6:
+		case 7:
+		case 8:
+		case 9:
+				rtnval = byte | 0x30;
+				break;
+
+		case 10:
+		case 11:
+		case 12:
+		case 13:
+		case 14:
+		case 15:
+				rtnval = byte + 0x37;
+				break;
+	}
+
+	return rtnval;
+}
+
+/* 
+	Convert a byte -> buffer with 2 ASCII nibles
+	
+	INPUT:	byte - binary
+	
+	OUTPUT:	result	- two ASCII nibbles 
+	NOTE: Assumes result 2 bytes or larger
+*/
+
+void modbus_hex_from_byte( unsigned char byte, uint8_t *result)
+{
+	result[0] = nib_to_ASCII(byte>>4);
+	result[1] = nib_to_ASCII(byte&0xF);
+}
+/* 
+	Convert a HEX value -> binary
+	
+	INPUT:	psn	- Current psn in buffer
+			buffer	- ASCII hex buffer
+			result	- Binary value from 2 byte hex
+	
+	OUTPUT:	Next buffer psn
+*/
+
+
+int modbus_byte_from_hex(int psn,unsigned char *buffer)
+{
+	uint8_t rtnval = 0;
+	uint8_t ch;
+	int i;
+
+	// Convert it one byte (ascii char -> nibble at a time
+
+	for( i=0; i< 2; i++ )
+	{
+		rtnval = rtnval << 4;
+		ch = buffer[psn++];
+		if( ch <= 0x39 )
+			rtnval |= ch - 0x30;		// Convert 0-9
+		else
+			rtnval |= ch - 0x37;		// A - F
+	}
+
+	return rtnval;
+}
+
+

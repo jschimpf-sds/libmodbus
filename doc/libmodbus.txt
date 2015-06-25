@@ -81,7 +81,18 @@ Set the serial mode::
     linkmb:modbus_rtu_get_rts[3]
     linkmb:modbus_rtu_set_rts[3]
 
+RTU ASCII Context
+^^^^^^^^^^^^^^^^^
 
+The RTU ASCII backend is similar to the RTU above but uses a HEX ASCII representation
+of the data instead of binary as the RTU.  Also the data is formed into packets with
+':' as a header and <cr><lf> as a trailer. Since this version is packet based like the
+RTU there is no time specification on packet timing, it is all determined by the 
+head and tail characters. (see Wikipedia, Modbus, http://en.wikipedia.org/wiki/Modbus ASCII format)
+
+Create a Modbus RTU ASCII context
+	linkmb:modbus_new_rtu_ascii[3]
+	
 
 TCP (IPv4) Context
 ^^^^^^^^^^^^^^^^^^

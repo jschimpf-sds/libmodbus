@@ -9,7 +9,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#ifdef SQUIGGLE
 #include <modbus.h>
+#endif
+#include "modbus.h"
+
 #ifdef _WIN32
 # include <winsock2.h>
 #else
@@ -26,7 +30,8 @@
 enum {
     TCP,
     TCP_PI,
-    RTU
+    RTU,
+	RTU_ASCII
 };
 
 int main(int argc, char*argv[])
@@ -47,6 +52,8 @@ int main(int argc, char*argv[])
             use_backend = TCP_PI;
         } else if (strcmp(argv[1], "rtu") == 0) {
             use_backend = RTU;
+		} else if (strcmp(argv[1], "rtuASCII") == 0) {
+			use_backend = RTU_ASCII;
         } else {
             printf("Usage:\n  %s [tcp|tcppi|rtu] - Modbus server for unit testing\n\n", argv[0]);
             return -1;
@@ -62,6 +69,12 @@ int main(int argc, char*argv[])
     } else if (use_backend == TCP_PI) {
         ctx = modbus_new_tcp_pi("::0", "1502");
         query = malloc(MODBUS_TCP_MAX_ADU_LENGTH);
+	} else if (use_backend == RTU_ASCII) {
+		// NOTE: In Client and server you can use any serial port
+		// in your system here.  (see server) I had a double
+		// serial port USB device so I used port 1 in server
+		// and 2 in client
+		ctx = modbus_new_rtu_ascii("/dev/cu.USA28X1a123P1.2", 115200, 'N', 8, 1);
     } else {
         ctx = modbus_new_rtu("/dev/ttyUSB0", 115200, 'N', 8, 1);
         modbus_set_slave(ctx, SERVER_ID);
@@ -170,7 +183,7 @@ int main(int argc, char*argv[])
                        == UT_REGISTERS_ADDRESS_INVALID_TID_OR_SLAVE) {
                 const int RAW_REQ_LENGTH = 5;
                 uint8_t raw_req[] = {
-                    (use_backend == RTU) ? INVALID_SERVER_ID : 0xFF,
+                    (use_backend == RTU || use_backend == RTU_ASCII) ? INVALID_SERVER_ID : 0xFF,
                     0x03,
                     0x02, 0x00, 0x00
                 };

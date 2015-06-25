@@ -9,14 +9,15 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <modbus.h>
+#include "modbus.h"
 
 #include "unit-test.h"
 
 enum {
     TCP,
     TCP_PI,
-    RTU
+    RTU,
+	RTU_ASCII
 };
 
 int test_server(modbus_t *ctx, int use_backend);
@@ -66,6 +67,8 @@ int main(int argc, char *argv[])
             use_backend = TCP_PI;
         } else if (strcmp(argv[1], "rtu") == 0) {
             use_backend = RTU;
+		} else if (strcmp(argv[1], "rtuASCII") == 0) {
+			use_backend = RTU_ASCII;
         } else {
             printf("Usage:\n  %s [tcp|tcppi|rtu] - Modbus client for unit testing\n\n", argv[0]);
             exit(1);
@@ -79,6 +82,12 @@ int main(int argc, char *argv[])
         ctx = modbus_new_tcp("127.0.0.1", 1502);
     } else if (use_backend == TCP_PI) {
         ctx = modbus_new_tcp_pi("::1", "1502");
+	} else if (use_backend == RTU_ASCII) {
+		// NOTE: In Client and server you can use any serial port
+		// in your system here.  (see server) I had a double
+		// serial port USB device so I used port 1 in server
+		// and 2 in client
+		ctx = modbus_new_rtu_ascii("/dev/cu.USA28X1a123P1.1", 115200, 'N', 8, 1);
     } else {
         ctx = modbus_new_rtu("/dev/ttyUSB1", 115200, 'N', 8, 1);
     }
@@ -91,7 +100,7 @@ int main(int argc, char *argv[])
                               MODBUS_ERROR_RECOVERY_LINK |
                               MODBUS_ERROR_RECOVERY_PROTOCOL);
 
-    if (use_backend == RTU) {
+    if (use_backend == RTU || use_backend == RTU_ASCII) {
         modbus_set_slave(ctx, SERVER_ID);
     }
 
@@ -392,7 +401,7 @@ int main(int argc, char *argv[])
     modbus_set_slave(ctx, INVALID_SERVER_ID);
     rc = modbus_read_registers(ctx, UT_REGISTERS_ADDRESS,
                                UT_REGISTERS_NB, tab_rp_registers);
-    if (use_backend == RTU) {
+    if (use_backend == RTU || use_backend == RTU_ASCII) {
         const int RAW_REQ_LENGTH = 6;
         uint8_t raw_req[] = { INVALID_SERVER_ID, 0x03, 0x00, 0x01, 0x01, 0x01 };
         /* Too many points */
@@ -443,7 +452,7 @@ int main(int argc, char *argv[])
     ASSERT_TRUE(rc == -1 && errno == ETIMEDOUT, "");
 
     /* Restore slave */
-    if (use_backend == RTU) {
+    if (use_backend == RTU || use_backend == RTU_ASCII) {
         modbus_set_slave(ctx, SERVER_ID);
     } else {
         modbus_set_slave(ctx, MODBUS_TCP_SLAVE);
@@ -635,7 +644,7 @@ int test_server(modbus_t *ctx, int use_backend)
     const int READ_RAW_REQ_LEN = 6;
     uint8_t read_raw_req[] = {
         /* slave */
-        (use_backend == RTU) ? SERVER_ID : 0xFF,
+        (use_backend == RTU || use_backend == RTU_ASCII) ? SERVER_ID : 0xFF,
         /* function, addr 1, 5 values */
         MODBUS_FC_READ_HOLDING_REGISTERS, 0x00, 0x01, 0x0, 0x05
     };
@@ -643,7 +652,7 @@ int test_server(modbus_t *ctx, int use_backend)
     const int RW_RAW_REQ_LEN = 13;
     uint8_t rw_raw_req[] = {
         /* slave */
-        (use_backend == RTU) ? SERVER_ID : 0xFF,
+        (use_backend == RTU || use_backend == RTU_ASCII) ? SERVER_ID : 0xFF,
         /* function, addr to read, nb to read */
         MODBUS_FC_WRITE_AND_READ_REGISTERS,
         /* Read */
@@ -661,7 +670,7 @@ int test_server(modbus_t *ctx, int use_backend)
     const int WRITE_RAW_REQ_LEN = 13;
     uint8_t write_raw_req[] = {
         /* slave */
-        (use_backend == RTU) ? SERVER_ID : 0xFF,
+        (use_backend == RTU || use_backend == RTU_ASCII) ? SERVER_ID : 0xFF,
         /* function will be set in the loop */
         MODBUS_FC_WRITE_MULTIPLE_REGISTERS,
         /* Address */
@@ -689,7 +698,7 @@ int test_server(modbus_t *ctx, int use_backend)
     int backend_length;
     int backend_offset;
 
-    if (use_backend == RTU) {
+    if (use_backend == RTU || use_backend == RTU_ASCII) {
         backend_length = 3;
         backend_offset = 1;
     } else {

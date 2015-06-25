@@ -14,6 +14,7 @@ TXT3 = \
         modbus_mapping_new.txt \
         modbus_mask_write_register.txt \
         modbus_new_rtu.txt \
+        modbus_new_rtu_ascii.txt \
         modbus_new_tcp_pi.txt \
         modbus_new_tcp.txt \
         modbus_read_bits.txt \
